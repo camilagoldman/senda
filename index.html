@@ -1825,7 +1825,7 @@ function importData(obj){
   }
   if(obj.settings && obj.settings.plan && typeof obj.settings.plan==="object"){ store.settings.plan=obj.settings.plan; n++; }
   if(obj.settings && Array.isArray(obj.settings.medidas)){ for(const m of obj.settings.medidas){ if(!m||!m.fecha) continue; const i=store.settings.medidas.findIndex(x=>x.fecha===m.fecha); if(i>=0) store.settings.medidas[i]={...store.settings.medidas[i],...m}; else store.settings.medidas.push({id:m.id||("m"+uid()),...m}); n++; } }
-  if(obj.settings && obj.replaceGoals && obj.settings.goals){ store.settings.goals={...store.settings.goals,...obj.settings.goals}; n++; }
+  if(obj.settings && obj.settings.goals && obj.settings.goals.kcal && (obj.replaceGoals || !store.settings.goals.kcal)){ store.settings.goals={...store.settings.goals,...obj.settings.goals}; n++; }
   if(obj.settings && obj.settings.peso && !store.settings.peso){ store.settings.peso=+obj.settings.peso; }
   syncPlan(); if(typeof fillGoalInputs==="function") fillGoalInputs();
   if(obj.settings){ const s=normSettings(obj.settings); for(const f of s.custom){ if(!store.settings.custom.some(x=>x.id===f.id||x.n===f.n)){ store.settings.custom.push(f); n++; } }  persist("settings"); }
