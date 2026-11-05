@@ -465,7 +465,8 @@ body.typing .toast{bottom:16px}
     <div class="stack">
       <div class="row">
         <label class="f" for="aType" style="flex:1 1 100%">Qué hiciste<select id="aType"></select></label>
-        <label class="f" for="aName" id="aNameWrap" style="flex:1 1 100%" hidden>Cuál<input type="text" id="aName" placeholder="Ej: Pilates, baile, pesas"></label>
+        <label class="f" for="aName" id="aNameWrap" style="flex:1 1 100%" hidden>Cuál<input type="text" id="aName" placeholder="Ej: Tenis, escalada, patín"></label>
+        <label class="f" for="aCat" id="aCatWrap" style="flex:1 1 100%" hidden>Cuenta como<select id="aCat"><option value="aer">Aeróbico (te agita)</option><option value="fza">Fuerza (trabajás músculos)</option><option value="mov">Movilidad (estirás, elongás)</option></select></label>
         <label class="f" for="aLv" id="aLvWrap" style="flex:1 1 100%">Intensidad<select id="aLv"></select></label>
         <label class="f" for="aKm" id="aKmWrap">Kilómetros<input type="number" id="aKm" min="0" step="any" inputmode="decimal" placeholder="Ej: 4"></label>
         <label class="f" for="aMin">Minutos<input type="number" id="aMin" min="0" step="1" inputmode="numeric" placeholder="Ej: 45"></label>
@@ -497,6 +498,13 @@ body.typing .toast{bottom:16px}
     <h2 id="sumWTitle">Tu semana</h2>
     <p class="muted small" id="sumWSub" style="margin:2px 0 0"></p>
     <div id="sumW" class="sumw"></div>
+  </section>
+
+  <!-- Movimiento -->
+  <section class="card" data-view="progreso" aria-labelledby="moveTitle">
+    <h2 id="moveTitle">Tu movimiento</h2>
+    <p class="muted small" id="moveSub" style="margin:2px 0 0"></p>
+    <div id="moveW" class="sumw"></div>
   </section>
 
   <!-- Semana -->
@@ -848,7 +856,7 @@ function allFoods(){ return [...store.settings.custom.map(f=>({...f,custom:true}
 function forGrams(f, grams){ const m=grams/100; return {kcal:f.k*m, p:f.p*m, c:f.c*m, g:f.g*m}; }
 
 /* ---------- Render ---------- */
-function render(){ if(typeof renderBackup==="function" && $("backupLast")) renderBackup(); renderDate(); renderSummary(); renderEval(); renderMeals(); renderAct(); renderWeek(); renderRecent(); renderCustom(); if(typeof renderSumW==="function") renderSumW(); if(typeof renderPlanView==="function" && !editing && typeof ppCur!=="undefined") renderPlanView(); if(typeof renderCal==="function"){ const sd=dateOf(current); if(calMonth && (calMonth.getMonth()!==sd.getMonth()||calMonth.getFullYear()!==sd.getFullYear())) calMonth=null; renderCal(); } }
+function render(){ if(typeof renderBackup==="function" && $("backupLast")) renderBackup(); renderDate(); renderSummary(); renderEval(); renderMeals(); renderAct(); renderWeek(); renderRecent(); renderCustom(); if(typeof renderSumW==="function") renderSumW(); if(typeof renderMove==="function") renderMove(); if(typeof renderPlanView==="function" && !editing && typeof ppCur!=="undefined") renderPlanView(); if(typeof renderCal==="function"){ const sd=dateOf(current); if(calMonth && (calMonth.getMonth()!==sd.getMonth()||calMonth.getFullYear()!==sd.getFullYear())) calMonth=null; renderCal(); } }
 
 function renderDate(){
   const d=dateOf(current);
@@ -1209,14 +1217,18 @@ const WALK=[[3.2,2.8],[4,3],[4.8,3.5],[5.6,4.3],[6.4,5],[7.2,7]];
 const RUN=[[6.4,6],[8,8.3],[8.4,9],[9.7,9.8],[10.8,10.5],[11.3,11],[12,11.8],[12.9,12.3],[14.5,12.8]];
 const interp=(t,x)=>{ if(x<=t[0][0]) return t[0][1]; for(let i=1;i<t.length;i++){ if(x<=t[i][0]){ const [x0,y0]=t[i-1],[x1,y1]=t[i]; return y0+(y1-y0)*(x-x0)/(x1-x0);} } return t[t.length-1][1]; };
 const ACTS = {
-  walk:{n:"Caminata", dist:true, pace:12, tbl:WALK, aer:true},
-  run:{n:"Correr", dist:true, pace:6.5, tbl:RUN, aer:true},
-  core:{n:"Core / calistenia", lv:[["Suave",3.5],["Moderada",5],["Intensa",8]], def:1},
-  yoga:{n:"Yoga", lv:[["Suave (hatha, yin)",2.5],["Dinámico (vinyasa, power)",4]], def:0},
-  swim:{n:"Natación", lv:[["Suave",5.8],["Moderada",8.3],["Intensa",10]], def:0, aer:true},
-  spin:{n:"Spinning", lv:[["Suave",5.5],["Moderada",7],["Intensa",8.5]], def:1, aer:true},
-  bike:{n:"Bici", lv:[["Paseo",4],["Moderada",6.8],["Intensa",10]], def:0, aer:true, distOpt:true},
-  other:{n:"Otra actividad", lv:[["Suave (estiramientos, pilates)",3],["Moderada (baile, pesas)",5],["Intensa",8]], def:1, named:true},
+  walk:{n:"Caminata", dist:true, pace:12, tbl:WALK, aer:true, cat:"aer"},
+  run:{n:"Correr", dist:true, pace:6.5, tbl:RUN, aer:true, cat:"aer"},
+  core:{n:"Core / calistenia", lv:[["Suave",3.5],["Moderada",5],["Intensa",8]], def:1, cat:"fza"},
+  gym:{n:"Pesas / gimnasio", lv:[["Suave",3.5],["Moderada",5],["Intensa",6]], def:1, cat:"fza"},
+  pilates:{n:"Pilates", lv:[["Suave",3],["Moderado",3.8],["Intenso (reformer)",4.5]], def:1, cat:"fza"},
+  yoga:{n:"Yoga", lv:[["Suave (hatha, yin)",2.5],["Dinámico (vinyasa, power)",4]], def:0, cat:"mov"},
+  stretch:{n:"Estiramientos / movilidad", lv:[["Suave",2.3],["Activa",2.8]], def:0, cat:"mov"},
+  swim:{n:"Natación", lv:[["Suave",5.8],["Moderada",8.3],["Intensa",10]], def:0, aer:true, cat:"aer"},
+  spin:{n:"Spinning", lv:[["Suave",5.5],["Moderada",7],["Intensa",8.5]], def:1, aer:true, cat:"aer"},
+  bike:{n:"Bici", lv:[["Paseo",4],["Moderada",6.8],["Intensa",10]], def:0, aer:true, distOpt:true, cat:"aer"},
+  dance:{n:"Baile", lv:[["Suave",3.5],["Moderado",5],["Intenso (zumba)",7]], def:1, aer:true, cat:"aer"},
+  other:{n:"Otra actividad", lv:[["Suave",3],["Moderada",5],["Intensa",8]], def:1, named:true, cat:null},
 };
 function actCalc(type,lv,min,km){
   const a=ACTS[type], w=store.settings.peso||60;
@@ -1231,7 +1243,7 @@ function actCalc(type,lv,min,km){
 }
 function actForm(){
   const t=$("aType").value, a=ACTS[t];
-  $("aLvWrap").hidden=!!a.dist; $("aKmWrap").hidden=!(a.dist||a.distOpt); $("aNameWrap").hidden=!a.named;
+  $("aLvWrap").hidden=!!a.dist; $("aKmWrap").hidden=!(a.dist||a.distOpt); $("aNameWrap").hidden=!a.named; $("aCatWrap").hidden=!a.named;
   if(!a.dist){ $("aLv").replaceChildren(...a.lv.map((l,i)=>el("option",{value:i},l[0]))); $("aLv").value=String(a.def); }
   actPrev();
 }
@@ -1274,7 +1286,7 @@ function addActivityInner(){
   if(!a.dist && !(min>0)){ toast("Poné los minutos"); return; }
   const lv=+$("aLv").value, r=actCalc(t,lv,min,km);
   const name = a.named && $("aName").value.trim() ? $("aName").value.trim() : a.n;
-  day(current).exercise.push({id:uid(), type:t, name, lv:a.dist?null:lv, lvName:a.dist?null:a.lv[lv][0], min:Math.round(r.min), km:r.km?r1(r.km):0, kcal:Math.round(r.kcal)});
+  day(current).exercise.push({id:uid(), type:t, cat: a.cat || $("aCat").value, name, lv:a.dist?null:lv, lvName:a.dist?null:a.lv[lv][0], min:Math.round(r.min), km:r.km?r1(r.km):0, kcal:Math.round(r.kcal)});
   const k=current, id=day(current).exercise[day(current).exercise.length-1].id;
   persist("day-"+current); ["aKm","aMin","aName"].forEach(id=>$(id).value=""); actPrev(); render();
   toast(`Agregado: ${name} · ${f0(r.kcal)} kcal`, ()=>{ const dd=day(k); dd.exercise=dd.exercise.filter(x=>x.id!==id); persist("day-"+k); render(); });
@@ -1518,6 +1530,33 @@ $("toastUndo").addEventListener("click",()=>{ if(undoFn) undoFn(); undoFn=null; 
 
 
 
+/* ---------- Movimiento de la semana ---------- */
+const catOf = e => e.cat || ACTS[e.type]?.cat || (ACTS[e.type]?.aer? "aer" : null);
+const MOVE_GOAL = {fza:2, mov:2, aer:150};
+function weekMove(ks){
+  const m={fza:0,mov:0,aer:0,kcal:0,min:0};
+  for(const k of ks) for(const e of (store.days[k]?.exercise||[])){ const c=catOf(e); if(c==="fza") m.fza++; else if(c==="mov") m.mov++; else if(c==="aer") m.aer+=+e.min||0; m.kcal+=+e.kcal||0; m.min+=+e.min||0; }
+  return m;
+}
+function renderMove(){
+  if(!$("moveW")) return;
+  const ks=[]; for(let i=6;i>=0;i--) ks.push(addDays(current,-i));
+  const m=weekMove(ks);
+  const row=(lbl,sub,val,goal,unit,color)=>{ const pct=Math.min(100,goal? val/goal*100:0), done=val>=goal;
+    return el("div",{class:"sumw-row"}, el("div",{class:"top"}, el("span",{}, lbl, el("small",{class:"muted",style:"display:block;font-size:12px"},sub)), el("span",{}, el("b",{text:f0(val)}), ` / ${goal} ${unit}`, done? el("span",{class:"ok",text:" ✓"}):null)),
+      el("div",{class:"bar"}, el("i",{style:`width:${pct}%;background:${color}`}))); };
+  $("moveSub").textContent = m.min? `Últimos 7 días · ${f0(m.min)} min en total, unas ${f0(m.kcal)} kcal` : "Últimos 7 días";
+  const tips=[];
+  if(m.fza<MOVE_GOAL.fza) tips.push("una sesión de fuerza");
+  if(m.mov<MOVE_GOAL.mov) tips.push("algo de movilidad");
+  if(m.aer<MOVE_GOAL.aer) tips.push(`${f0(MOVE_GOAL.aer-m.aer)} min de aeróbico`);
+  $("moveW").replaceChildren(
+    row("Fuerza","Core, pesas, pilates, calistenia",m.fza,MOVE_GOAL.fza,"sesiones","var(--accent)"),
+    row("Movilidad","Yoga, estiramientos",m.mov,MOVE_GOAL.mov,"sesiones","var(--p)"),
+    row("Aeróbico","Caminar, correr, bici, nadar",m.aer,MOVE_GOAL.aer,"min","var(--g)"),
+    el("p",{class:"muted small",style:"margin:0"}, tips.length? `Para completar la semana te falta ${tips.join(", ").replace(/, ([^,]*)$/," y $1")}.` : "¡Semana completa de movimiento!"));
+}
+
 /* ---------- Resumen de la semana ---------- */
 function renderSumW(){
   if(!$("sumW")) return;
@@ -1541,8 +1580,7 @@ function renderSumW(){
   kids.push(el("div",{class:"sumw-tiles"},
     el("div",{}, el("small",{},"Días dentro del plan"), el("b",{text: done.length? `${ok} de ${done.length}` : "—"})),
     el("div",{}, el("small",{},"Permitidos"), el("b",{text:`${perms} de 3`})),
-    el("div",{}, el("small",{},"Aeróbico"), el("b",{text:f0(aer)}), el("span",{text:" min"})),
-    el("div",{}, el("small",{},"Core"), el("b",{text:`${core} de 2`}), el("span",{style:"display:block",text:`Yoga: ${yoga} de 2`}))));
+    ));
   $("sumW").replaceChildren(...kids);
 }
 
