@@ -1393,6 +1393,8 @@ $("nextDay").addEventListener("click",()=>{ if(current<TODAY){ current=addDays(c
 /* Evaluación del día */
 const FRUITS=["Banana","Manzana","Pera","Durazno","Naranja","Mandarina","Kiwi","Ciruela","Damasco","Frutillas","Uvas","Cerezas","Melón","Sandía","Arándanos"];
 const VEGS=["Verduras","Ensalada","Tomate","Calabaza","Sopa de verduras","Brócoli","Zanahoria","Zapallito"];
+const VEG_WORDS=["verdura","ensalada","rucula","lechuga","tomate","acelga","espinaca","brocoli","zanahoria","zapallito","zucchini","calabaza","zapallo","berenjena","alcaucil","pepino","morron","aji ","cebolla","hongo","champi","chaucha","coliflor","repollo","remolacha","esparrago","palmito","radicheta","apio","puerro","rabanito","hinojo","kale","wok de verdura","brotes"];
+const isVeg=e=>{ const n=norm(e.name||""); return !/fruta|frutilla/.test(n) && VEG_WORDS.some(w=>n.includes(w)); };
 const startsAny=(n,list)=>list.some(x=>n.startsWith(x));
 function sevOf(actual, target){ if(!target) return 0; const dev=Math.abs(actual-target)/target; return dev<0.2?1:dev<0.35?2:3; }
 function grade(kind, actual, target){
@@ -1428,6 +1430,7 @@ function renderEval(){
   const L={ok:"En objetivo",warn:"Pasada",low:"Por debajo",na:"Sin datos"};
   const items=[];
   const macro=(key,label,unit)=>{
+    if(!g[key]){ items.push({st:"na", lblTxt:"Sin objetivo", title:label, tx:`${f0(t[key])} ${unit}. Definí tu objetivo en Ajustes para ver cómo vas.`, sev:0}); return "na"; }
     const st=grade(key,t[key],ref[key]);
     const lbl = key==="p" ? ({ok:"Bien",warn:"Un poco corta",low:"Te falta",na:"Sin datos"})[st] : st==="warn"?"Pasada":L[st];
     const diff=t[key]-ref[key];
@@ -1463,7 +1466,7 @@ function renderEval(){
   if(done||fruitTarget) items.push({st: fruits>=2?"ok": done?"warn":(fruits>=fruitTarget?"ok":"warn"), lblTxt: `${fruits} de 2`, title:"Frutas", tx: fruits>=2?"Cumpliste las 2 frutas del día.": done?"El plan pide 2 frutas por día; si falta una, se puede sumar a la noche.":"Llevás "+fruits+"; el plan pide 2 por día (postre del almuerzo y banana en la merienda)."});
   const vegMeals=["Almuerzo","Cena"].filter(m=>logged.includes(m));
   if(vegMeals.length){
-    const withVeg=vegMeals.filter(m=>ents.some(e=>mealOf(e)===m && startsAny(e.name,VEGS)));
+    const withVeg=vegMeals.filter(m=>ents.some(e=>mealOf(e)===m && (startsAny(e.name,VEGS)||isVeg(e))));
     items.push({st: withVeg.length===vegMeals.length?"ok":"warn", lblTxt:`${withVeg.length} de ${vegMeals.length}`, title:"Verduras en el plato", tx: withVeg.length===vegMeals.length? "Medio plato de verduras, como pide el plan." : `Faltó verdura en: ${vegMeals.filter(m=>!withVeg.includes(m)).join(" y ").toLowerCase()}.`});
   }
   const w=d.water||0;
