@@ -458,6 +458,17 @@ body.typing .toast{bottom:16px}
     <div id="meals"></div>
   </section>
 
+  <!-- Pasos -->
+  <section class="card" data-view="actividad" aria-labelledby="stepsTitle">
+    <h2 id="stepsTitle">Pasos del día</h2>
+    <p class="muted small" style="margin:4px 0 10px">Copiá los pasos que te marca Samsung Health (o la app de salud de tu celular). Senda los cuenta como caminata.</p>
+    <div class="row" style="align-items:flex-end">
+      <label class="f" for="steps" style="flex:1 1 140px">Pasos<input type="number" id="steps" min="0" step="1" inputmode="numeric" placeholder="Ej: 7500"></label>
+      <button class="btn" id="stepsSave" type="button" style="flex:0 0 auto">Guardar</button>
+    </div>
+    <p class="small" id="stepsInfo" style="margin:8px 0 0;color:var(--ink-2)"></p>
+  </section>
+
   <!-- Actividad -->
   <section class="card" data-view="actividad" aria-labelledby="actTitle">
     <h2 id="actTitle">Actividad y hábitos</h2>
@@ -857,7 +868,7 @@ function allFoods(){ return [...store.settings.custom.map(f=>({...f,custom:true}
 function forGrams(f, grams){ const m=grams/100; return {kcal:f.k*m, p:f.p*m, c:f.c*m, g:f.g*m}; }
 
 /* ---------- Render ---------- */
-function render(){ if(typeof renderBackup==="function" && $("backupLast")) renderBackup(); renderDate(); renderSummary(); renderEval(); renderMeals(); renderAct(); renderWeek(); renderRecent(); renderCustom(); if(typeof renderSumW==="function") renderSumW(); if(typeof renderMove==="function") renderMove(); if(typeof renderPlanView==="function" && !editing && typeof ppCur!=="undefined") renderPlanView(); if(typeof renderCal==="function"){ const sd=dateOf(current); if(calMonth && (calMonth.getMonth()!==sd.getMonth()||calMonth.getFullYear()!==sd.getFullYear())) calMonth=null; renderCal(); } }
+function render(){ if(typeof renderBackup==="function" && $("backupLast")) renderBackup(); renderDate(); renderSummary(); renderEval(); renderMeals(); renderAct(); renderWeek(); renderRecent(); renderCustom(); if(typeof renderSumW==="function") renderSumW(); if(typeof renderMove==="function") renderMove(); if(typeof renderSteps==="function") renderSteps(); if(typeof renderPlanView==="function" && !editing && typeof ppCur!=="undefined") renderPlanView(); if(typeof renderCal==="function"){ const sd=dateOf(current); if(calMonth && (calMonth.getMonth()!==sd.getMonth()||calMonth.getFullYear()!==sd.getFullYear())) calMonth=null; renderCal(); } }
 
 function renderDate(){
   const d=dateOf(current);
@@ -1531,6 +1542,27 @@ $("toastUndo").addEventListener("click",()=>{ if(undoFn) undoFn(); undoFn=null; 
 
 
 
+
+/* ---------- Pasos del día ---------- */
+function stepsToWalk(n){
+  const talla=(medsSorted().slice(-1)[0]?.talla)||160;
+  const km=n*talla*0.415/100000, min=n/105;   // zancada ≈ 41,5% de la altura · ~105 pasos por minuto
+  const r=actCalc("walk",0,min,km); return {km:r1(km), min:Math.round(min), kcal:Math.round(r.kcal)};
+}
+function renderSteps(){
+  const d=store.days[current]||{}, n=d.steps||0;
+  if(document.activeElement!==$("steps")) $("steps").value = n||"";
+  if(!n){ $("stepsInfo").textContent=""; return; }
+  const w=stepsToWalk(n);
+  $("stepsInfo").textContent=`✓ ${n.toLocaleString("es-AR")} pasos ≈ ${f1(w.km)} km, ${w.min} min de caminata, unas ${w.kcal} kcal.`;
+}
+$("stepsSave").addEventListener("click",()=>{
+  const n=Math.round(num($("steps"))||0), d=day(current), id="steps-"+current;
+  d.exercise=d.exercise.filter(e=>e.id!==id); d.steps=n||0;
+  if(n>0){ const w=stepsToWalk(n); d.exercise.push({id, type:"walk", cat:"aer", name:`Caminata (pasos del día)`, lv:null, lvName:`${n.toLocaleString("es-AR")} pasos`, min:w.min, km:w.km, kcal:w.kcal}); }
+  $("steps").blur(); persist("day-"+current); render(); toast(n? "Pasos guardados" : "Pasos borrados");
+});
+
 /* ---------- Movimiento de la semana ---------- */
 const catOf = e => e.cat || ACTS[e.type]?.cat || (ACTS[e.type]?.aer? "aer" : null);
 const MOVE_GOAL = {fza:2, mov:2, aer:150};
@@ -1821,6 +1853,7 @@ function importData(obj){
     for(const e of (src.exercise||[])){ const id=e.id||("imp-"+k+"-x-"+(e.type||"")+"-"+(e.min||0)); if(d.exercise.some(x=>x.id===id)) continue; d.exercise.push({...e,id}); n++; }
     if(src.water!=null && +src.water>d.water){ d.water=+src.water; n++; }
     if(src.sleep!=null && d.sleep==null){ d.sleep=+src.sleep; n++; }
+    if(src.steps && !d.steps){ d.steps=+src.steps; }
     if(Array.isArray(src.perm)) for(const pm of src.perm){ if(!d.perm.includes(pm)){ d.perm.push(pm); n++; } }
     persist("day-"+k);
   }
