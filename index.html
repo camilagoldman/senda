@@ -983,8 +983,7 @@ function renderWeek(){
     el("span",{}, el("i",{class:"sw",style:"display:inline-block;background:var(--s3-dot);margin-right:6px;vertical-align:-1px"}), "Lejos del plan"),
     el("span",{}, el("i",{class:"sw",style:"display:inline-block;background:var(--accent);margin-right:6px;vertical-align:-1px"}), "Con permitido"),
     el("span",{}, el("i",{class:"sw",style:"display:inline-block;background:var(--line);margin-right:6px;vertical-align:-1px"}), "Sin registro completo"),
-    goal? el("span",{}, "– – Objetivo "+f0(goal)+" kcal"):null,
-    null);
+    ...(goal? [el("span",{}, "– – Objetivo "+f0(goal)+" kcal")] : []));
 }
 function showTip(ev,txt){ const t=$("tip"); t.textContent=txt; t.style.left=Math.min(window.innerWidth-200,ev.clientX+12)+"px"; t.style.top=(ev.clientY-34)+"px"; t.style.opacity=1; }
 function hideTip(){ $("tip").style.opacity=0; }
@@ -1397,9 +1396,11 @@ const VEG_WORDS=["verdura","ensalada","rucula","lechuga","tomate","acelga","espi
 const isVeg=e=>{ const n=norm(e.name||""); return !/fruta|frutilla/.test(n) && VEG_WORDS.some(w=>n.includes(w)); };
 const startsAny=(n,list)=>list.some(x=>n.startsWith(x));
 function sevOf(actual, target){ if(!target) return 0; const dev=Math.abs(actual-target)/target; return dev<0.2?1:dev<0.35?2:3; }
-function grade(kind, actual, target){
+function grade(kind, actual, target, wk){
   if(!target) return "na";
   const d=actual-target, abs = kind==="kcal"? [60,80] : [5,8];
+  // finde: el objetivo ya trae +10% de margen, así que no se suma otro 10% de tolerancia
+  if(wk && kind!=="p"){ if(d > abs[0]) return "warn"; if(d < -Math.max(0.15*target,abs[1])) return "low"; return "ok"; }
   if(kind==="p") return (d>=-Math.max(0.1*target,abs[0]))?"ok": actual>=0.75*target?"warn":"low";
   if(d > Math.max(0.1*target,abs[0])) return "warn";
   if(d < -Math.max(0.15*target,abs[1])) return "low";
@@ -1415,7 +1416,7 @@ function dayColor(k){
 function dayStatus(k){
   const g=store.settings.goals, t=totals(k), d=store.days[k];
   if(!t.kcal || !g.kcal || d?.skip) return null;
-  const st = grade("kcal",t.kcal,g.kcal*(isWeekend(k)?1.1:1));
+  const st = grade("kcal",t.kcal,g.kcal*(isWeekend(k)?1.1:1),isWeekend(k));
   if(st==="warn" && hasPerm(k)) return "perm";
   return st;
 }
@@ -1431,7 +1432,7 @@ function renderEval(){
   const items=[];
   const macro=(key,label,unit)=>{
     if(!g[key]){ items.push({st:"na", lblTxt:"Sin objetivo", title:label, tx:`${f0(t[key])} ${unit}. Definí tu objetivo en Ajustes para ver cómo vas.`, sev:0}); return "na"; }
-    const st=grade(key,t[key],ref[key]);
+    const st=grade(key,t[key],ref[key],wk&&done);
     const lbl = key==="p" ? ({ok:"Bien",warn:"Un poco corta",low:"Te falta",na:"Sin datos"})[st] : st==="warn"?"Pasada":L[st];
     const diff=t[key]-ref[key];
     let tx = `${f0(t[key])} ${unit} de ${f0(ref[key])} ${unit}${done?"":" previstos hasta ahora"}`;
