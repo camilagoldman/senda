@@ -1418,6 +1418,23 @@ function dayStatus(k){
   if(st==="warn" && hasPerm(k)) return "perm";
   return st;
 }
+/* De dónde vino la grasa: buena (insaturada) o a limitar (saturada) */
+const FAT_GOOD=["palta","aguacate","oliva","aceituna","nuez","nueces","almendra","avellana","castana","pistacho","mani","semilla","chia","lino","girasol","atun","salmon","sardina","caballa","trucha","pescado","huevo"];
+const FAT_BAD=["vacio","asado","entrana","matambre","chorizo","morcilla","provoleta","chinchulin","molleja","bondiola","panceta","bacon","salame","salamin","mortadela","fiambre","manteca","crema","dulce de leche","queso","dambo","mozzarella","muzzarella","cheddar","parmesano","frit","factura","medialuna","alfajor","galletita","chocolate","torta","helado","hamburguesa","pizza","empanada"];
+function fatKind(name){
+  const n=norm(name);
+  if(/descremad|light|magr|untable/.test(n) && /queso|crema|yogur|ricota/.test(n)) return "";
+  if(FAT_GOOD.some(w=>n.includes(w)) && !/frit/.test(n)) return "buena";
+  if(FAT_BAD.some(w=>n.includes(w))) return "a limitar";
+  return "";
+}
+function fatSources(ents){
+  const top=ents.filter(e=>(+e.g||0)>=3).sort((x,y)=>(+y.g)-(+x.g)).slice(0,3);
+  if(!top.length) return "";
+  const txt=top.map(e=>{ const k=fatKind(e.name); return `${e.name.split(/[,(]/)[0].trim().toLowerCase()} (${f0(e.g)} g${k? ", "+(k==="buena"?"grasa buena":"conviene limitar"):""})`; });
+  const lf=new Intl.ListFormat("es",{type:"conjunction"});
+  return ` Vino sobre todo de: ${lf.format(txt)}.`;
+}
 function renderEval(){
   const g=store.settings.goals, t=totals(current), d=store.days[current]||{}, ents=d.entries||[];
   const logged=MEALS.filter(m=>ents.some(e=>mealOf(e)===m));
@@ -1435,7 +1452,7 @@ function renderEval(){
     const diff=t[key]-ref[key];
     let tx = `${f0(t[key])} ${unit} de ${f0(ref[key])} ${unit}${done?"":" previstos hasta ahora"}`;
     if(key==="p" && st!=="ok") tx += done? `. Faltaron ${f0(-diff)} g. Para la próxima: leche proteica, huevo, pollo, atún o yogur suman fácil.` : `. Te faltan ${f0(-diff)} g: sumá leche proteica, huevo, pollo, atún o yogur en lo que queda.`;
-    else if(st==="warn") tx += ` (+${f0(diff)} ${unit}).`;
+    else if(st==="warn") tx += ` (+${f0(diff)} ${unit}).` + (key==="g"? fatSources(ents) : "");
     else if(st==="low" && key==="kcal") tx += done? ". Comiste bastante menos que lo previsto: el plan pide no saltear comidas." : ".";
     items.push({st, lblTxt:lbl, title:label, tx, sev: st==="ok"||st==="na"? 0 : sevOf(t[key],ref[key])});
     return st;
