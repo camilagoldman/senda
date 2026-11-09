@@ -1396,11 +1396,9 @@ const VEG_WORDS=["verdura","ensalada","rucula","lechuga","tomate","acelga","espi
 const isVeg=e=>{ const n=norm(e.name||""); return !/fruta|frutilla/.test(n) && VEG_WORDS.some(w=>n.includes(w)); };
 const startsAny=(n,list)=>list.some(x=>n.startsWith(x));
 function sevOf(actual, target){ if(!target) return 0; const dev=Math.abs(actual-target)/target; return dev<0.2?1:dev<0.35?2:3; }
-function grade(kind, actual, target, wk){
+function grade(kind, actual, target){
   if(!target) return "na";
   const d=actual-target, abs = kind==="kcal"? [60,80] : [5,8];
-  // finde: el objetivo ya trae +10% de margen, así que no se suma otro 10% de tolerancia
-  if(wk && kind!=="p"){ if(d > abs[0]) return "warn"; if(d < -Math.max(0.15*target,abs[1])) return "low"; return "ok"; }
   if(kind==="p") return (d>=-Math.max(0.1*target,abs[0]))?"ok": actual>=0.75*target?"warn":"low";
   if(d > Math.max(0.1*target,abs[0])) return "warn";
   if(d < -Math.max(0.15*target,abs[1])) return "low";
@@ -1411,12 +1409,12 @@ const hasPerm = k => (store.days[k]?.perm||[]).length>0;
 function permsLast7(k){ let n=0; for(let i=0;i<7;i++){ n+=(store.days[addDays(k,-i)]?.perm||[]).length; } return n; }
 function dayColor(k){
   const st=dayStatus(k); if(!st) return null; if(st==="ok") return "var(--ok)"; if(st==="perm") return "var(--accent)";
-  const g=store.settings.goals; const tgt=g.kcal*(isWeekend(k)?1.1:1); return `var(--s${sevOf(totals(k).kcal,tgt)}-dot)`;
+  const g=store.settings.goals; const tgt=g.kcal; return `var(--s${sevOf(totals(k).kcal,tgt)}-dot)`;
 }
 function dayStatus(k){
   const g=store.settings.goals, t=totals(k), d=store.days[k];
   if(!t.kcal || !g.kcal || d?.skip) return null;
-  const st = grade("kcal",t.kcal,g.kcal*(isWeekend(k)?1.1:1),isWeekend(k));
+  const st = grade("kcal",t.kcal,g.kcal);
   if(st==="warn" && hasPerm(k)) return "perm";
   return st;
 }
@@ -1427,12 +1425,12 @@ function renderEval(){
   const done = current<TODAY || logged.length===MEALS.length || h>=22;
   // objetivo de referencia: completo si terminó el día, o lo previsto para las comidas cargadas
   const wk=isWeekend(current), nPerm=(d.perm||[]).length, permW=permsLast7(current);
-  const ref = done ? (wk? {...g, kcal:g.kcal*1.1, c:g.c*1.1, g:g.g*1.1} : g) : logged.reduce((a,m)=>{ const r=MEAL_RATIO[m]; return {kcal:a.kcal+(g.kcal||0)*r.kcal,p:a.p+(g.p||0)*r.p,c:a.c+(g.c||0)*r.c,g:a.g+(g.g||0)*r.g}; },{kcal:0,p:0,c:0,g:0});
+  const ref = done ? g : logged.reduce((a,m)=>{ const r=MEAL_RATIO[m]; return {kcal:a.kcal+(g.kcal||0)*r.kcal,p:a.p+(g.p||0)*r.p,c:a.c+(g.c||0)*r.c,g:a.g+(g.g||0)*r.g}; },{kcal:0,p:0,c:0,g:0});
   const L={ok:"En objetivo",warn:"Pasada",low:"Por debajo",na:"Sin datos"};
   const items=[];
   const macro=(key,label,unit)=>{
     if(!g[key]){ items.push({st:"na", lblTxt:"Sin objetivo", title:label, tx:`${f0(t[key])} ${unit}. Definí tu objetivo en Ajustes para ver cómo vas.`, sev:0}); return "na"; }
-    const st=grade(key,t[key],ref[key],wk&&done);
+    const st=grade(key,t[key],ref[key]);
     const lbl = key==="p" ? ({ok:"Bien",warn:"Un poco corta",low:"Te falta",na:"Sin datos"})[st] : st==="warn"?"Pasada":L[st];
     const diff=t[key]-ref[key];
     let tx = `${f0(t[key])} ${unit} de ${f0(ref[key])} ${unit}${done?"":" previstos hasta ahora"}`;
@@ -1492,7 +1490,7 @@ function renderEval(){
     if(rest.length){ const rk=Math.max(0,(g.kcal||0)-t.kcal), rp=Math.max(0,(g.p||0)-t.p); lead += ` Te ${rest.length===1?"queda":"quedan"} ${new Intl.ListFormat("es",{type:"conjunction"}).format(rest).toLowerCase()}: unas ${f0(rk)} kcal y ${f0(rp)} g de proteína para llegar al día.`; }
   }
   if(nPerm && sk==="warn" && permW<=3){ badge="ok"; lead = done? `Día con permitido: dentro de lo que el plan contempla (${permW} de 3 en los últimos 7 días), siempre con cantidades controladas. Mañana seguís normal, sin compensar.` : "Hoy hay un permitido: está contemplado en el plan. Para el resto del día, seguí con las porciones de siempre."; }
-  if(wk) lead = "Finde: el plan pide cuidar calidad y porciones, sin que difieran mucho de la semana (con un 10% más de margen). " + lead;
+  if(wk) lead = "Finde: el plan pide cuidar calidad y porciones, parecidas a las de la semana. " + lead;
   $("evTitle").textContent = done? "Resumen del día" : "Cómo vas hasta ahora";
   $("evBadge").className="ev-badge "+badge; $("evBadge").textContent = badge==="ok"?"✓":badge==="warn"?"!":"↓";
   $("evLead").textContent=lead;
