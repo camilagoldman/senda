@@ -1897,7 +1897,7 @@ function importData(obj){
 }
 $("ioImport").addEventListener("click",()=>{
   const t=$("ioIn").value; if(!t.trim()){ $("ioMsg").textContent="Pegá primero el código."; return; }
-  try{ const n=importData(t); $("ioMsg").textContent= n? `✓ Listo: se cargaron ${n} ${n===1?"cosa":"cosas"}.` : "No había nada nuevo para cargar."; $("ioIn").value=""; if(n) toast(`Importado: ${n} ${n===1?"cosa":"cosas"}`); }
+  try{ const n=importData(t); $("ioMsg").textContent= n? `✓ Listo: se cargaron ${n} ${n===1?"cosa":"cosas"}.` : "Eso ya estaba cargado (la app no lo duplica). Fijate en el día y la comida correspondientes."; $("ioIn").value=""; if(n) toast(`Importado: ${n} ${n===1?"cosa":"cosas"}`); }
   catch(e){ $("ioMsg").textContent="No se pudo leer el código. Copialo completo y probá de nuevo."; }
 });
 $("ioFile").addEventListener("change",async ev=>{ const f=ev.target.files[0]; if(!f) return; $("ioIn").value=await f.text(); ev.target.value=""; $("ioImport").click(); });
