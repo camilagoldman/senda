@@ -1409,13 +1409,22 @@ const hasPerm = k => (store.days[k]?.perm||[]).length>0;
 function permsLast7(k){ let n=0; for(let i=0;i<7;i++){ n+=(store.days[addDays(k,-i)]?.perm||[]).length; } return n; }
 function dayColor(k){
   const st=dayStatus(k); if(!st) return null; if(st==="ok") return "var(--ok)"; if(st==="perm") return "var(--accent)";
+  if(st==="macro") return "var(--s1-dot)";
   const g=store.settings.goals; const tgt=g.kcal; return `var(--s${sevOf(totals(k).kcal,tgt)}-dot)`;
+}
+/* Calorías bien pero proteína muy corta o grasa muy pasada: el día no cuenta como "en objetivo" */
+function macroMiss(k){
+  const g=store.settings.goals, t=totals(k), out=[];
+  if(g.p && t.p < 0.8*g.p) out.push("faltó proteína");
+  if(g.g && t.g > 1.3*g.g) out.push("sobró grasa");
+  return out;
 }
 function dayStatus(k){
   const g=store.settings.goals, t=totals(k), d=store.days[k];
   if(!t.kcal || !g.kcal || d?.skip) return null;
-  const st = grade("kcal",t.kcal,g.kcal);
-  if(st==="warn" && hasPerm(k)) return "perm";
+  let st = grade("kcal",t.kcal,g.kcal);
+  if(st==="ok" && macroMiss(k).length) st="macro";
+  if((st==="warn"||st==="macro") && hasPerm(k)) return "perm";
   return st;
 }
 /* De dónde vino la grasa: buena (insaturada) o a limitar (saturada) */
@@ -1671,6 +1680,8 @@ function renderCalDetail(){
     const ul=el("ul",{class:"cal-meals"});
     for(const m of MEALS){ const l=ents.filter(e=>mealOf(e)===m); if(!l.length) continue; ul.append(el("li",{}, el("span",{},m+" · "+l.map(e=>e.name.split(" · ")[0]).join(", ")), el("span",{},f0(l.reduce((a,e)=>a+(+e.kcal||0),0))+" kcal"))); }
     box.append(ul);
+    const st=dayStatus(k);
+    if(st==="macro"){ const mm=macroMiss(k); box.append(el("p",{class:"small",style:"margin:0;color:var(--ink-2)"},`Calorías bien, pero ${new Intl.ListFormat("es",{type:"conjunction"}).format(mm)}.`)); }
     const extra=[]; if(ex.length) extra.push(ex.map(e=>`${e.name}${e.min?" "+f0(e.min)+" min":""}`).join(", ")); if(d.water) extra.push(`${d.water} vasos de agua`); if(d.sleep!=null) extra.push(`${f1(d.sleep)} h de sueño`);
     if(extra.length) box.append(el("p",{class:"small",style:"margin:0;color:var(--ink-2)"},extra.join(" · ")));
   }

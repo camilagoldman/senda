@@ -1,5 +1,5 @@
 // Senda: guarda la app en el celular para que abra rápido, con o sin internet.
-const CACHE = "senda-v36";
+const CACHE = "senda-v37";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icons/icon-app-192.png", "icons/icon-app-512.png", "icons/icon-180.png", "fonts/dm-sans-400.woff2", "fonts/dm-sans-500.woff2", "fonts/dm-sans-600.woff2", "fonts/dm-sans-700.woff2"];
 const WAIT = 2500; // si la red tarda más que esto (datos móviles lentos), se abre la copia guardada
 
