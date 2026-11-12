@@ -1154,6 +1154,26 @@ function eggBuilder(id){
     el("div",{class:"row",style:"justify-content:space-between;align-items:center"}, el("span",{style:"flex:1 1 auto"},k),
       el("button",{class:"btn add",type:"button",style:"flex:0 0 auto",onclick:()=>addEntries([calc()])},"Agregar huevos")));
 }
+/* Fruta suelta: elegir fruta y tamaño y agregar, como los huevos */
+function fruitBuilder(id){
+  const list=FRUITS.map(n=>FOODS.find(x=>x.n===n)).filter(f=>f&&f.us&&f.us.length);
+  const sf=el("select",{id:id+"F"}); list.forEach((f,i)=>sf.append(el("option",{value:i},f.n)));
+  const su=el("select",{id:id+"U"});
+  let q=1; const k=el("span",{class:"k num"});
+  const chips=el("div",{class:"chips",style:"margin:0"});
+  const fr=()=>list[+sf.value], un=()=>fr().us[+su.value]||fr().us[0];
+  const fillU=()=>{ su.replaceChildren(...fr().us.map((u,i)=>el("option",{value:i},unitLabel(u)))); const def=fr().us.findIndex(u=>/median/.test(u[0])); su.value=String(def>=0?def:0); };
+  const calc=()=>({name:fr().n, qty:`${q} × ${unitLabel(un())}`, grams:q*un()[1], ...forGrams(fr(),q*un()[1])});
+  const upd=()=>{ k.textContent=f0(calc().kcal)+" kcal"; chips.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.q===q))); };
+  [1,2,3].forEach(n=>chips.append(el("button",{class:"qchip",type:"button","data-q":n,onclick:()=>{q=n;upd();}},String(n))));
+  sf.addEventListener("change",()=>{ fillU(); upd(); }); su.addEventListener("change",upd); fillU(); upd();
+  return el("div",{class:"plate",style:"gap:8px"}, el("b",{},"Fruta"),
+    el("label",{class:"f",for:id+"F"},"Cuál",sf),
+    el("label",{class:"f",for:id+"U"},"Tamaño",su),
+    el("div",{class:"f"},"Cuántas",chips),
+    el("div",{class:"row",style:"justify-content:space-between;align-items:center"}, el("span",{style:"flex:1 1 auto"},k),
+      el("button",{class:"btn add",type:"button",style:"flex:0 0 auto",onclick:()=>addEntries([calc()])},"Agregar fruta")));
+}
 function renderPlan(){
   const m=$("mealSel").value, body=$("planBody"); body.replaceChildren();
   if(!PLAN){
@@ -1207,18 +1227,18 @@ function renderPlan(){
   }
   const isMer=m==="Merienda";
   body.append(sec("Para tomar", optRow(PLAN.drinks[0]), coffeeBuilder("cb"), optRow(PLAN.drinks[2])));
-  let addBanana=isMer; const rows=[];
+  let addBanana=false; const rows=[];
   const extra=()=> addBanana? [PLAN.banana] : [];
   const kids=[];
   if(isMer){
-    const cb=el("input",{type:"checkbox",id:"plBan"}); cb.checked=true;
+    const cb=el("input",{type:"checkbox",id:"plBan"}); cb.checked=false;
     cb.addEventListener("change",()=>{ addBanana=cb.checked; rows.forEach(r=>r._upd()); });
     kids.push(el("label",{class:"check",for:"plBan"},cb,"Sumar 1 banana chica (lo indica el plan para la merienda)"));
   }
   PLAN.food.forEach(o=>{ const r=optRow(o,extra); rows.push(r); kids.push(r); });
   body.append(sec("Para comer (elegí una)", ...kids));
   if(isMer) body.append(sec("En la calle", optRow(PLAN.street)));
-  body.append(sec("Sueltos", eggBuilder("eg"), el("button",{class:"btn-ghost",type:"button",onclick:()=>$("tab-buscar").click()},"Buscar otro alimento")));
+  body.append(sec("Sueltos", fruitBuilder("fr"), eggBuilder("eg"), el("button",{class:"btn-ghost",type:"button",onclick:()=>$("tab-buscar").click()},"Buscar otro alimento")));
 }
 $("mealSel").addEventListener("change",()=>{ if(!$("pane-plan").hidden) renderPlan(); });
 $("tab-plan").addEventListener("click",renderPlan);
