@@ -1163,9 +1163,9 @@ function fruitBuilder(id){
   const chips=el("div",{class:"chips",style:"margin:0"});
   const fr=()=>list[+sf.value], un=()=>fr().us[+su.value]||fr().us[0];
   const fillU=()=>{ su.replaceChildren(...fr().us.map((u,i)=>el("option",{value:i},unitLabel(u)))); const def=fr().us.findIndex(u=>/median/.test(u[0])); su.value=String(def>=0?def:0); };
-  const calc=()=>({name:fr().n, qty:`${q} × ${unitLabel(un())}`, grams:q*un()[1], ...forGrams(fr(),q*un()[1])});
+  const calc=()=>({name:fr().n, qty:`${q===0.5?"½":q} × ${unitLabel(un())}`, grams:q*un()[1], ...forGrams(fr(),q*un()[1])});
   const upd=()=>{ k.textContent=f0(calc().kcal)+" kcal"; chips.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.q===q))); };
-  [1,2,3].forEach(n=>chips.append(el("button",{class:"qchip",type:"button","data-q":n,onclick:()=>{q=n;upd();}},String(n))));
+  [0.5,1,2,3].forEach(n=>chips.append(el("button",{class:"qchip",type:"button","data-q":n,onclick:()=>{q=n;upd();}},n===0.5?"½":String(n))));
   sf.addEventListener("change",()=>{ fillU(); upd(); }); su.addEventListener("change",upd); fillU(); upd();
   return el("div",{class:"plate",style:"gap:8px"}, el("b",{},"Fruta"),
     el("label",{class:"f",for:id+"F"},"Cuál",sf),
