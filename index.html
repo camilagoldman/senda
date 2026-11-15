@@ -644,7 +644,7 @@ const MILK_DEF = 4; // proteica, la que indica el plan
 const F = (n,k,p,c,g,us=[],x={}) => ({n,k,p,c,g,us,...x});
 const PLATE = ["porción del plan (110 g cocido)",110];
 const FOODS = [
-  F("Café con leche",0,0,0,0,[["taza con un chorrito de leche (30 ml)",30],["taza con ¼ de leche (50 ml)",50],["taza con ½ de leche (100 ml)",100],["taza con ¾ de leche (150 ml)",150],["taza con 1 taza de leche (200 ml)",200]],{v:MILK,vd:MILK_DEF,vLabel:"Leche",ud:2,a:"te con leche mate cocido lagrima latte",note:"Se calcula por la leche; el café suma unas 2 kcal."}),
+  F("Café con leche",0,0,0,0,[["taza con un chorrito de leche (30 ml)",30],["taza con ¼ de leche (50 ml)",50],["taza con ⅓ de leche (65 ml)",65],["taza con ½ de leche (100 ml)",100],["taza con ¾ de leche (150 ml)",150],["taza con 1 taza de leche (200 ml)",200]],{v:MILK,vd:MILK_DEF,vLabel:"Leche",ud:3,a:"te con leche mate cocido lagrima latte",note:"Se calcula por la leche; el café suma unas 2 kcal."}),
   F("Cortado",0,0,0,0,[["cortado chico (30 ml de leche)",30],["cortado en jarrito (60 ml de leche)",60]],{v:MILK,vd:MILK_DEF,vLabel:"Leche",ud:0,a:"cafe cortado",note:"Se calcula por la leche; el café suma unas 2 kcal."}),
   F("Leche",0,0,0,0,[["chorrito (30 ml)",30],["¼ taza (50 ml)",50],["½ taza (100 ml)",100],["taza (200 ml)",200],["vaso (250 ml)",250]],{v:MILK,vd:MILK_DEF,vLabel:"Tipo",ud:3,a:"serenisima proteica protein high deslactosada zero lactosa descremada entera"}),
   F("Café solo, mate o té sin azúcar",1,0.1,0,0,[["taza",200]],{a:"cafe negro expresso espresso mate te infusion"}),
@@ -1127,16 +1127,20 @@ function coffeeBuilder(id){
   const cafe=FOODS.find(f=>f.n==="Café con leche");
   const last=(store.settings.last||{})[cafe.id]||{};
   const sv=el("select",{id:id+"V"}); MILK.forEach((x,i)=>sv.append(el("option",{value:i},x.n))); sv.value=String(last.v!=null?last.v:MILK_DEF);
-  const su=el("select",{id:id+"U"}); cafe.us.forEach((u,i)=>su.append(el("option",{value:i},u[0].replace("taza con ","").replace(/^un /,"")))); su.value=String(last.u!=null&&last.u!=="g"?last.u:2);
+  const DR=["Café","Té","Mate cocido"];
+  const sd=el("select",{id:id+"D"}); DR.forEach((x,i)=>sd.append(el("option",{value:i},x))); sd.value=String(last.d||0);
+  const su=el("select",{id:id+"U"}); cafe.us.forEach((u,i)=>su.append(el("option",{value:i},u[0].replace("taza con ","").replace(/^un /,""))));
+  const OLD=[30,50,100,150,200]; const ml = last.ml || (last.u!=null&&last.u!=="g"? OLD[+last.u] : 100); const ui=cafe.us.findIndex(u=>u[1]===ml); su.value=String(ui>=0?ui:3);
   const k=el("span",{class:"k num"}), msg=el("span");
-  const calc=()=>{ const u=cafe.us[+su.value]; return {name:`Café con leche · ${MILK[+sv.value].n}`, qty:`1 × ${u[0]}`, grams:u[1], ...forGrams(MILK[+sv.value],u[1])}; };
+  const calc=()=>{ const u=cafe.us[+su.value]; return {name:`${DR[+sd.value]} con leche · ${MILK[+sv.value].n}`, qty:`1 × ${u[0]}`, grams:u[1], ...forGrams(MILK[+sv.value],u[1])}; };
   const upd=()=>{ k.textContent=f0(calc().kcal)+" kcal"; }; sv.addEventListener("change",upd); su.addEventListener("change",upd); upd();
   return el("div",{class:"plate",style:"gap:8px"},
-    el("b",{},"Café con leche: elegí leche y cantidad"),
+    el("b",{},"Café, té o mate cocido con leche"),
+    el("label",{class:"f",for:id+"D"},"Qué",sd),
     el("label",{class:"f",for:id+"V"},"Leche",sv),
     el("label",{class:"f",for:id+"U"},"Cantidad de leche",su),
     el("div",{class:"row",style:"justify-content:space-between;align-items:center"}, el("span",{style:"flex:1 1 auto"},k," ",msg),
-      el("button",{class:"btn add",type:"button",style:"flex:0 0 auto",onclick:()=>{ addEntries([calc()]); store.settings.last=store.settings.last||{}; store.settings.last[cafe.id]={v:+sv.value,u:+su.value,q:1}; persist("settings"); }},"Agregar café")),
+      el("button",{class:"btn add",type:"button",style:"flex:0 0 auto",onclick:()=>{ addEntries([calc()]); store.settings.last=store.settings.last||{}; store.settings.last[cafe.id]={v:+sv.value,u:+su.value,ml:cafe.us[+su.value][1],d:+sd.value,q:1}; persist("settings"); }},"Agregar")),
     el("span",{class:"muted small"},"Si tomaste dos cafés distintos, agregá uno, cambiá la leche y agregá el otro."));
 }
 function eggBuilder(id){
