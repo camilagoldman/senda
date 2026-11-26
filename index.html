@@ -889,9 +889,10 @@ function renderSummary(){
   const chip=$("kcalChip"); chip.replaceChildren();
   if(g.kcal){
     const left=g.kcal-t.kcal;
-    chip.append(left>=0? el("span",{class:"chip num",text:`Te quedan ${f0(left)} kcal`}) : el("span",{class:"chip over num",text:`${f0(-left)} kcal por encima del objetivo`}));
+    const tol=Math.max(0.1*g.kcal,60), inMargin = left<0 && -left<=tol; // mismo margen que usa la evaluación del día
+    chip.append(left>=0? el("span",{class:"chip num",text:`Te quedan ${f0(left)} kcal`}) : inMargin? el("span",{class:"chip num",text:`${f0(-left)} kcal por encima, dentro del margen`}) : el("span",{class:"chip over num",text:`${f0(-left)} kcal por encima del objetivo`}));
     const pct=Math.min(100,t.kcal/g.kcal*100);
-    $("kcalBar").style.width=pct+"%"; $("kcalBar").style.background = left<0?"var(--over)":"var(--accent)";
+    $("kcalBar").style.width=pct+"%"; $("kcalBar").style.background = left<0 && !inMargin?"var(--over)":"var(--accent)";
     $("kcalBarWrap").setAttribute("aria-valuenow",Math.round(pct)); $("kcalBarWrap").hidden=false;
   } else { $("kcalBarWrap").hidden=true; }
   $("goalHint").hidden = hasGoals();
