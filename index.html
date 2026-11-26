@@ -1427,10 +1427,12 @@ const startsAny=(n,list)=>list.some(x=>n.startsWith(x));
 function sevOf(actual, target){ if(!target) return 0; const dev=Math.abs(actual-target)/target; return dev<0.2?1:dev<0.35?2:3; }
 function grade(kind, actual, target){
   if(!target) return "na";
-  const d=actual-target, abs = kind==="kcal"? [60,80] : [5,8];
-  if(kind==="p") return (d>=-Math.max(0.1*target,abs[0]))?"ok": actual>=0.75*target?"warn":"low";
-  if(d > Math.max(0.1*target,abs[0])) return "warn";
-  if(d < -Math.max(0.15*target,abs[1])) return "low";
+  const d=actual-target;
+  // Márgenes: nada es tan exacto. Calorías ±10%; macros con un margen más amplio.
+  if(kind==="kcal"){ if(d > Math.max(0.1*target,60)) return "warn"; if(d < -Math.max(0.15*target,80)) return "low"; return "ok"; }
+  if(kind==="p") return actual>=0.85*target?"ok": actual>=0.7*target?"warn":"low";
+  if(d > Math.max(0.2*target,6)) return "warn";
+  if(d < -Math.max(0.25*target,10)) return "low";
   return "ok";
 }
 const isWeekend = k => { const wd=dateOf(k).getDay(); return wd===0||wd===6; };
