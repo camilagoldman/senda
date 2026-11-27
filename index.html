@@ -674,6 +674,8 @@ const FOODS = [
   F("Yogur descremado con cereales La Serenísima",71,4.5,13.4,0,[["pote (157 g)",157]],{a:"yogurt serenisima cereales descremado light pote",note:"Valores aproximados por 100 g. Si la etiqueta de tu pote dice otra cosa, cargala en Mis alimentos."}),
   F("Yogur natural",40,4,5.5,0.1,[["pote",190],["porción del plan",200]],{v:[{n:"Descremado (Ser, Dahi, Tregar)",k:40,p:4,c:5.5,g:0.1},{n:"Entero",k:65,p:3.5,c:5,g:3.3},{n:"Griego natural",k:97,p:9,c:4,g:5},{n:"Bebible descremado con sabor",k:45,p:3,c:7,g:0.1}],vLabel:"Tipo",ud:1,a:"yogurt"}),
   F("Granola proteica Íntegra",373,20,50,11,[["cda sopera",10],["taza",40]],{a:"granola integra",note:"Calorías de la etiqueta; macros aproximados."}),
+  F("Barrita Íntegra avena, cacao y chocolate",335,17.5,42.5,11,[["barrita",40]],{a:"barrita integra avena cacao chocolate barra",ud:0,note:"Etiqueta: 134 kcal y 7 g de proteína por barrita (40 g)."}),
+  F("Barrita Íntegra chocolate, banana y dulce de leche",324,24.4,36.6,9,[["barrita",41]],{a:"barrita integra banana dulce de leche barra",ud:0,note:"Etiqueta: 133 kcal y 10 g de proteína por barrita (41 g)."}),
   F("Barrita proteica Íntegra",342,33.3,26.7,11.3,[["barrita",45]],{a:"barrita integra proteica barra cereal",note:"Valores de la barrita de maní y chocolate (45 g). Para Prota, Pont, Best o Entrenuts, cargalas en Mis alimentos."}),
   F("Proteína en polvo (whey)",400,78,8,6,[["scoop",30]],{a:"whey suplemento"}),
   F("Tofu",76,8,1.9,4.8,[["porción",100]]),
@@ -994,7 +996,7 @@ function renderWeek(){
 function showTip(ev,txt){ const t=$("tip"); t.textContent=txt; t.style.left=Math.min(window.innerWidth-200,ev.clientX+12)+"px"; t.style.top=(ev.clientY-34)+"px"; t.style.opacity=1; }
 function hideTip(){ $("tip").style.opacity=0; }
 
-const QUICK=["Café con leche","Huevo","Pechuga de pollo (cocida)","Arroz (cocido)","Banana","Barrita proteica Íntegra","Pan","Verduras (½ plato)","Queso"];
+const QUICK=["Café con leche","Huevo","Pechuga de pollo (cocida)","Arroz (cocido)","Banana","Barrita Íntegra avena, cacao y chocolate","Barrita proteica Íntegra","Pan","Verduras (½ plato)","Queso"];
 function renderRecent(){
   const rec=store.settings.recent.map(id=>allFoods().find(f=>f.id===id)).filter(Boolean);
   const list = rec.length? rec : QUICK.map(n=>FOODS.find(f=>f.n===n)).filter(Boolean);
